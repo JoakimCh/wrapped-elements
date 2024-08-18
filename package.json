@@ -1,0 +1,12 @@
+{
+  "name": "wrapped-elements",
+  "main": "./wrapped-elements.js",
+  "type": "module",
+  "version": "0.9.0",
+  "description": "HTMLElements wrapped like hot burritos!",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joakimch/wrapped-elements"
+  }
+}
