@@ -5,6 +5,13 @@
 
 They are intended to be used by programmers who enjoys coding more than messing around with HTML files.
 
+E.g. just let your index.html be like this:
+```html
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script type="module" src="index.js"></script>
+```
+
 # Features
   * A simple way to work with HTMLElements within JavaScript.
   * An HTMLElement is only ever wrapped once (instances not garbage collected are reused).
