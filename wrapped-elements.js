@@ -2,18 +2,13 @@
 export * from './bonus.js'
 
 /** The HTMLElement setter function in WrappedHtmlElements.
- * @typedef {Function} SetProperty
- * @param {...any} values The value or values to set.
- * @returns {WrappedHtmlElement} 
+ * @typedef {(value: any, ...additionalValues: any[]) => WrappedHtmlElement} SetProperty
  */
-/** Thanks to Claude.ai for this!
- * @typedef {Object} ElementProxy
- * @typedef {keyof HTMLElementTagNameMap} ElementTagName
- * @typedef {{[K in ElementTagName]: WrappedHtmlElement}} ElementProxyMap
+/** The e proxy record.
+ * @typedef {Record<keyof HTMLElementTagNameMap, WrappedHtmlElement>} ElementMap
  */
-/** Todo: Also document the setter for HTMLElement properties...:
- * @typedef {keyof HTMLElement} HTMLElementProperty
- * @typedef {{[K in HTMLElementProperty]: SetProperty}} HTMLElementPropertyMap
+/** Todo: Also document the setters for HTMLElement properties...
+ * @typedef {Record<keyof HTMLElement, SetProperty>} HTMLElementPropertyMap
  */
 
 /** Given `WrappedHtmlElements` returns the `HTMLElements`, anything else is passed through.
@@ -38,12 +33,13 @@ export function wrap(element) {
 
 /** Find any tagged `HTMLElements` here.
  * @type {Object.<string, HTMLElement>} */
-export const tags = {}
+export let tags = {}
 
 /** @type {WeakMap.<HTMLElement, WrappedHtmlElement>} */
 const wrapperWeakMap = new WeakMap()
 
 /** It's like an `HTMLElement` with some helper functions.
+ * @class
  * @implements {HTMLElementPropertyMap}
 */
 export class WrappedHtmlElement extends Function {
@@ -78,10 +74,9 @@ export class WrappedHtmlElement extends Function {
         const tagName = this.#element.tagName
         throw Error(`You're not supposed to assign a value to "e.${tagName}.${property}". To assign a value to the "${property}" property of the underlying HTMLElement call the property as a function instead and the argument passed will be assigned to it. Like this "e.${tagName}.${property}(value)", then multiple assignments can be chained.`)
       },
-      apply: (target, thisArg, args) => { // made possible by "extends Function"
+      apply: (target, thisArg, args) => {
         return this.children(...args)
       }
-      
     })
     return this.#proxy
   }
@@ -96,9 +91,16 @@ export class WrappedHtmlElement extends Function {
       }
     } else { // is property of element?
       if (!(property in this.#element)) {
+        if (typeof property == 'symbol') {
+          if (property === Symbol.toPrimitive) {
+            throw Error(`Looks like you're trying to add an unwrapped element as a child to an HTMLElement. unwrap() it or add the .element instead.`)
+          }
+          property = property.toString()
+        }
         throw Error(`HTMLElement.${property} doesn't exist and can therefore not be set. If you want to set an attribute named "${property}" then use setAttribute('${property}', value) instead.`)
       }
-      return function(...value) {
+      /** @type {SetProperty} */
+      function setProperty(...value) {
         if (typeof this.#element[property] == 'function') {
           if (property.startsWith('get')) {
             return this.#element[property](...value)
@@ -128,7 +130,24 @@ export class WrappedHtmlElement extends Function {
           this.#element[property] = value[0]
         }
         return this.#proxy
-      }.bind(this)
+      }
+      //return SetProperty.bind(this)
+      const parent = this.#element[property]
+      return new Proxy(setProperty, {
+        apply: (target, thisArg, args) => {
+          return setProperty.call(this, ...args)
+        },
+        get: (target, property) => {
+          return (...args) => {
+            if (typeof parent[property] == 'function') {
+              parent[property](args)
+            } else {
+              parent[property] = args[0]
+            }
+            return this.#proxy
+          }
+        }
+      })
     }
   }
 
@@ -138,27 +157,22 @@ export class WrappedHtmlElement extends Function {
     return this.#proxy
   }
 
-  // can just use hidden()
-  // hide(hide) {
-  //   this.#element.style.display = hide ? 'none' : 'initial'
-  //   return this.#proxy
-  // }
-
   /** Shortcut for `append(...unwrap(...elements))`. */
   children(...elements) {
     this.#element.append(...unwrap(...elements))
     return this.#proxy
   }
 
-  /** Store the `HTMLElement` under `tags[key]`. */
-  tag(key) {
-    tags[key] = this.#element
+  /** Store the `HTMLElement` under `tags[title]`. */
+  tag(title) {
+    tags[title] = this.#element
     return this.#proxy
   }
 
-  tagAndId(key) {
-    this.#element.id = key
-    tags[key] = this.#element
+  /** Store the `HTMLElement` under `tags[title]` and assign an id with the sane title. */
+  tagAndId(title) {
+    this.#element.id = title
+    tags[title] = this.#element
     return this.#proxy
   }
   
@@ -188,10 +202,28 @@ export class WrappedHtmlElement extends Function {
 
 
 /** Returns a new `WrappedHtmlElement` for any property you access.
- * @type {ElementProxyMap}
+ * @type {ElementMap}
  */
 export const e = new Proxy({}, {
   get: function(target, property) {
     return new WrappedHtmlElement(property)
   }
 })
+
+/** If given strings then consume the specified tags out of the `tags` object (return and remove them). If no arguments then consume all the tags.
+ * @param {string | object | undefined} tags */
+export function consumeTags(...tagTitle) {
+  // consume all
+  if (!tagTitle.length) {
+    const result = tags
+    tags = {}
+    return result
+  }
+  // consume some
+  const consumed = {}
+  for (const title of tagTitle) {
+    consumed[title] = tags[title]
+    delete tags[title]
+  }
+  return consumed
+}
