@@ -16,12 +16,13 @@ export * from './bonus.js'
  * @typedef {{[K in HTMLElementProperty]: SetProperty}} HTMLElementPropertyMap
  */
 
-/** Given `WrappedHtmlElements` returns the `HTMLElements`.
+/** Given `WrappedHtmlElements` returns the `HTMLElements`, anything else is passed through.
  * @param {WrappedHtmlElement} wrappedElements
  * @returns {HTMLElement[]}
 */
 export function unwrap(...wrappedElements) {
-  return wrappedElements.map(({element}) => element)
+  return wrappedElements.map((wrapper) => 
+    wrapper instanceof WrappedHtmlElement ? wrapper.element : wrapper)
 }
 
 /** Returns a `WrappedHtmlElement` instance wrapped around this element. If it's already wrapped in one then we just return that one.
@@ -45,7 +46,7 @@ const wrapperWeakMap = new WeakMap()
 /** It's like an `HTMLElement` with some helper functions.
  * @implements {HTMLElementPropertyMap}
 */
-export class WrappedHtmlElement {
+export class WrappedHtmlElement extends Function {
   /** @type {HTMLElement} */
   #element
   /** @type {WrappedHtmlElement} */
@@ -55,6 +56,7 @@ export class WrappedHtmlElement {
 
   /** @param {string | HTMLElement} tagNameOrElement */
   constructor(tagNameOrElement) {
+    super()
     Object.seal() // Object.freeze()
     if (tagNameOrElement instanceof HTMLElement) {
       this.#element = tagNameOrElement
@@ -63,7 +65,11 @@ export class WrappedHtmlElement {
         return wrapperWeakMap.get(this.#element)
       }
     } else {
-      this.#element = document.createElement(tagNameOrElement)
+      const split = tagNameOrElement.split(/(?=[A-Z])/) // regex to split camelCase words
+      if (split.length > 1) {
+        tagNameOrElement = split.join('-')
+      }
+      this.#element = document.createElement(tagNameOrElement.toLowerCase())
     }
     wrapperWeakMap.set(this.#element, this)
     this.#proxy = new Proxy(this, {
@@ -71,7 +77,11 @@ export class WrappedHtmlElement {
       set: (target, property, value) => {
         const tagName = this.#element.tagName
         throw Error(`You're not supposed to assign a value to "e.${tagName}.${property}". To assign a value to the "${property}" property of the underlying HTMLElement call the property as a function instead and the argument passed will be assigned to it. Like this "e.${tagName}.${property}(value)", then multiple assignments can be chained.`)
+      },
+      apply: (target, thisArg, args) => { // made possible by "extends Function"
+        return this.children(...args)
       }
+      
     })
     return this.#proxy
   }
@@ -177,7 +187,7 @@ export class WrappedHtmlElement {
 }
 
 
-/** A proxy object which returns a new `WrappedHtmlElement` for any property access (the property name is used to create the wrapped `HTMLElement`).
+/** Returns a new `WrappedHtmlElement` for any property you access.
  * @type {ElementProxyMap}
  */
 export const e = new Proxy({}, {
