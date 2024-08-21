@@ -70,85 +70,94 @@ export class WrappedHtmlElement extends Function {
     wrapperWeakMap.set(this.#element, this)
     this.#proxy = new Proxy(this, {
       get: this.#getProxy.bind(this),
-      set: (target, property, value) => {
-        const tagName = this.#element.tagName
-        throw Error(`You're not supposed to assign a value to "e.${tagName}.${property}". To assign a value to the "${property}" property of the underlying HTMLElement call the property as a function instead and the argument passed will be assigned to it. Like this "e.${tagName}.${property}(value)", then multiple assignments can be chained.`)
-      },
-      apply: (target, thisArg, args) => {
-        return this.children(...args)
-      }
+      set: this.#setProxy.bind(this),
+      apply: this.#applyProxy.bind(this),
     })
     return this.#proxy
   }
 
-  /** The handler for "get" access. */
-  #getProxy(target, property) {
-    if (property in this) { // is own function?
+  #applyProxy(target, thisArg, args) {
+    return this.children(...args)
+  }
+
+  #getProxy(target, property, r) {
+    if (property in this) {
       if (typeof this[property] == 'function') {
-        return this[property].bind(this) // in this case this == target 
-      } else {
-        return this[property] // e.g. to get this.element
+        return this[property].bind(this)
       }
-    } else { // is property of element?
-      if (!(property in this.#element)) {
-        if (typeof property == 'symbol') {
-          if (property === Symbol.toPrimitive) {
-            throw Error(`Looks like you're trying to add an unwrapped element as a child to an HTMLElement. unwrap() it or add the .element instead.`)
-          }
-          property = property.toString()
+      return this[property]
+    } else if (property in this.#element) {
+      return this.#getProperty(this.#element, property)
+    }
+  }
+
+  #setProxy(target, property, value, r) {
+    if (property in this) {
+      this[property] = value
+    } else if (property in this.#element) {
+      this.#element[property] = value
+    } else {
+      throw Error(`No such property: ${property}`)
+    }
+  }
+
+  #getProperty(parent, property) {
+    const value = parent[property]
+    switch (typeof value) {
+      case 'function':
+        return (...args) => {
+          value.call(parent, ...args)
+          return this.#proxy
         }
-        throw Error(`HTMLElement.${property} doesn't exist and can therefore not be set. If you want to set an attribute named "${property}" then use setAttribute('${property}', value) instead.`)
+      case 'object':
+        if (value !== null) {
+          return this.#propertyProxy(value)
+        }
+    }
+    // if primitive
+    const setOrGet = function(value) {
+      if (!arguments.length) {
+        return parent[property]
       }
-      /** @type {SetProperty} */
-      function setProperty(...value) {
-        if (typeof this.#element[property] == 'function') {
-          if (property.startsWith('get')) {
-            return this.#element[property](...value)
-          } else {
-            this.#element[property](...value)
+      parent[property] = value
+      return this.#proxy
+    }
+    return setOrGet.bind(this)
+  }
+
+  #propertyProxy(parent) {
+    return new Proxy(() => {}, {
+      get: (target, property) => {
+        if (property in parent) {
+          return this.#getProperty(parent, property)
+        }
+      },
+      set: (target, property, value) => {
+        parent[property] = value
+      },
+      apply: (target, thisArg, args) => {
+        // it's either an object or a function
+        if (typeof parent == 'function') {
+          parent(...args)
+        } else {
+          if (args.length > 1 || typeof args[0] != 'object') {
+            throw Error(`You must supply an object with the values to set.`)
           }
-        } else if (typeof this.#element[property] == 'object' && this.#element[property] !== null) {
-          if (value.length != 1 || typeof value[0] != 'object') {
-            throw Error(`HTMLElement.${property} is an object and you must supply an object with the keys to set, not: ${value[0]}`)
-          }
-          const keysToSet = value[0]
-          for (const key in keysToSet) {
-            if (key in this.#element[property]) {
-              switch (typeof this.#element[property][key]) {
-                default:
-                  this.#element[property][key] = keysToSet[key]
-                break
-                case 'function':
-                  this.#element[property][key](keysToSet[key])
-                break
-              }
+          for (const key in args[0]) {
+            if (!(key in parent)) {
+              throw Error(`No such key ${key} in object.`)
+            }
+            const value = args[0][key]
+            if (typeof parent[key] == 'function') {
+              parent[key](...(Array.isArray(value) ? value : [value]))
             } else {
-              throw Error(`HTMLElement.${property}.${key} doesn't exist and can therefore not be set.`)
+              parent[key] = value
             }
           }
-        } else {
-          this.#element[property] = value[0]
         }
         return this.#proxy
       }
-      //return SetProperty.bind(this)
-      const parent = this.#element[property]
-      return new Proxy(setProperty, {
-        apply: (target, thisArg, args) => {
-          return setProperty.call(this, ...args)
-        },
-        get: (target, property) => {
-          return (...args) => {
-            if (typeof parent[property] == 'function') {
-              parent[property](args)
-            } else {
-              parent[property] = args[0]
-            }
-            return this.#proxy
-          }
-        }
-      })
-    }
+    })
   }
 
   /** Shortcut for `textContent`. */
