@@ -98,3 +98,4 @@ export function setFavicon(href) {
 }
 
 export const log = console.log
+export const debug = console.debug

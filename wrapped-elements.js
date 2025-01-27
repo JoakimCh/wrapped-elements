@@ -20,7 +20,7 @@ export function unwrap(...wrappedElements) {
     wrapper instanceof WrappedHtmlElement ? wrapper.element : wrapper)
 }
 
-/** Returns a `WrappedHtmlElement` instance wrapped around this element. If it's already wrapped in one then we just return that one.
+/** Returns a `WrappedHtmlElement` instance wrapped around this element. If it's already wrapped in one then it just returns that one.
  * @param {HTMLElement} element
  * @returns {WrappedHtmlElement}
 */
@@ -48,6 +48,9 @@ export class WrappedHtmlElement extends Function {
   /** @type {WrappedHtmlElement} */
   #proxy
 
+  /** Store any custom data here. */
+  data = {}
+
   get element() {return this.#element}
 
   /** @param {string | HTMLElement} tagNameOrElement */
@@ -67,12 +70,13 @@ export class WrappedHtmlElement extends Function {
       }
       this.#element = document.createElement(tagNameOrElement.toLowerCase())
     }
-    wrapperWeakMap.set(this.#element, this)
+    // wrapperWeakMap.set(this.#element, this)
     this.#proxy = new Proxy(this, {
       get: this.#getProxy.bind(this),
       set: this.#setProxy.bind(this),
       apply: this.#applyProxy.bind(this),
     })
+    wrapperWeakMap.set(this.#element, this.#proxy)
     return this.#proxy
   }
 
@@ -160,14 +164,20 @@ export class WrappedHtmlElement extends Function {
     })
   }
 
-  /** Shortcut for `textContent`. */
+  /** Shortcut for `textContent`. If no argument then it returns the `textContent`. */
   text(text) {
+    if (!arguments.length) {
+      return this.#element.textContent
+    }
     this.#element.textContent = text
     return this.#proxy
   }
 
   /** Shortcut for `append(...unwrap(...elements))`. */
-  children(...elements) {
+  children = this.add
+
+  /** Shortcut for `append(...unwrap(...elements))`. */
+  add(...elements) {
     this.#element.append(...unwrap(...elements))
     return this.#proxy
   }
@@ -207,6 +217,13 @@ export class WrappedHtmlElement extends Function {
   get(attribute) {
     return this.#element.getAttribute(attribute)
   }
+
+  /** Execute this callback once added to the document (the first time). */
+  onceAdded(callback) {
+    onceAdded.set(this.#element, callback)
+    observeDocument()
+    return this.#proxy
+  }
 }
 
 
@@ -219,7 +236,7 @@ export const e = new Proxy({}, {
   }
 })
 
-/** If given strings then consume the specified tags out of the `tags` object (return and remove them). If no arguments then consume all the tags.
+/** If given strings then consume the specified tags out of the `tags` object (returns and removes them). If no arguments then consume all the tags.
  * @param {string | object | undefined} tags */
 export function consumeTags(...tagTitle) {
   // consume all
@@ -236,3 +253,50 @@ export function consumeTags(...tagTitle) {
   }
   return consumed
 }
+
+/** [element, callback] */
+const onceAdded = new Map()
+let isObserving = false
+
+function observeDocument() {
+  if (!isObserving) {
+    documentObserver.observe(document.body, {childList: true, subtree: true})
+    isObserving = true
+  }
+}
+
+function runCallbackIfAny(element) {
+  const callback = onceAdded.get(element)
+  if (callback) {
+    try {
+      if (typeof callback == 'function') {
+        const wrapped = wrap(element)
+        callback(wrapped)
+      } else {
+        throw Error('The onceAdded(callback) must be a function!')
+      }
+    } finally {
+      onceAdded.delete(element)
+    }
+  }
+}
+
+const documentObserver = new MutationObserver((mutationsList, observer) => {
+  for (const mutation of mutationsList) {
+    if (mutation.type == 'childList') {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType == Node.ELEMENT_NODE) {
+          runCallbackIfAny(node)
+          // also check its children
+          for (const descendant of node.querySelectorAll('*')) {
+            runCallbackIfAny(descendant)
+          }
+        }
+      }
+    }
+  }
+  if (onceAdded.size == 0) {
+    observer.disconnect()
+    isObserving = false
+  }
+})
