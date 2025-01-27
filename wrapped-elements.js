@@ -70,7 +70,6 @@ export class WrappedHtmlElement extends Function {
       }
       this.#element = document.createElement(tagNameOrElement.toLowerCase())
     }
-    // wrapperWeakMap.set(this.#element, this)
     this.#proxy = new Proxy(this, {
       get: this.#getProxy.bind(this),
       set: this.#setProxy.bind(this),
