@@ -212,9 +212,26 @@ export class WrappedHtmlElement extends Function {
     return this.#proxy
   }
 
+  /** Shortcut for `toggleAttribute`. */
+  toggle(attribute, force = undefined) {
+    this.#element.toggleAttribute(attribute, force)
+    return this.#proxy
+  }
+
+  /** Shortcut for `removeAttribute`. */
+  remove(attribute) {
+    this.#element.removeAttribute(attribute)
+    return this.#proxy
+  }
+
   /** Shortcut for `getAttribute`. */
   get(attribute) {
     return this.#element.getAttribute(attribute)
+  }
+
+  /** Shortcut for `hasAttribute`. */
+  has(attribute) {
+    return this.#element.hasAttribute(attribute)
   }
 
   /** Execute this callback once added to the document (the first time). */
