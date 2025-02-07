@@ -164,7 +164,7 @@ export class WrappedHtmlElement extends Function {
   }
 
   /** Set or Get a property on `#element` */
-  #setOrGet(property, value) {
+  #setOrGetProperty(property, value) {
     if (arguments.length == 1) {
       return this.#element[property]
     }
@@ -172,14 +172,34 @@ export class WrappedHtmlElement extends Function {
     return this.#proxy
   }
 
-  /** Shortcut for setting `textContent`, if no argument then it returns the value. */
-  text(value) {
-    return this.#setOrGet('textContent', ...arguments)
+  /** Set or Get a attribute on `#element` */
+  #setOrGetAttribute(attribute, value) {
+    if (arguments.length == 1) {
+      return this.#element.getAttribute(attribute)
+    }
+    this.#element.setAttribute(attribute, value)
+    return this.#proxy
   }
 
-  /** Shortcut for setting `className`, if no argument then it returns the value. */
+  /** Shortcut for `textContent`. */
+  text(value) {
+    return this.#setOrGetProperty('textContent', ...arguments)
+  }
+
+  /** Shortcut for `className`. */
   class(value) {
-    return this.#setOrGet('className', ...arguments)
+    return this.#setOrGetProperty('className', ...arguments)
+  }
+
+  /** Shortcut for the `name` attribute. */
+  name(value) {
+    return this.#setOrGetAttribute('name', ...arguments)
+  }
+
+  /** Shortcut for the `for` attribute. */
+  for(value) {
+    // return this.#setOrGetProperty('htmlFor', ...arguments)
+    return this.#setOrGetAttribute('for', ...arguments)
   }
 
   /** Shortcut for `append(...unwrap(...elements))`. @deprecated Use `add()`. */
