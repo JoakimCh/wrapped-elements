@@ -240,7 +240,7 @@ export class WrappedHtmlElement extends Function {
   }
 
   /** Shortcut for `setAttribute`. */
-  set(attribute, value) {
+  set(attribute, value = '') {
     this.#element.setAttribute(attribute, value)
     return this.#proxy
   }
