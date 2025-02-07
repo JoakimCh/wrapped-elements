@@ -163,16 +163,26 @@ export class WrappedHtmlElement extends Function {
     })
   }
 
-  /** Shortcut for `textContent`. If no argument then it returns the `textContent`. */
-  text(text) {
-    if (!arguments.length) {
-      return this.#element.textContent
+  /** Set or Get a property on `#element` */
+  #setOrGet(property, value) {
+    if (arguments.length == 1) {
+      return this.#element[property]
     }
-    this.#element.textContent = text
+    this.#element[property] = value
     return this.#proxy
   }
 
-  /** Shortcut for `append(...unwrap(...elements))`. */
+  /** Shortcut for setting `textContent`, if no argument then it returns the value. */
+  text(value) {
+    return this.#setOrGet('textContent', ...arguments)
+  }
+
+  /** Shortcut for setting `className`, if no argument then it returns the value. */
+  class(value) {
+    return this.#setOrGet('className', ...arguments)
+  }
+
+  /** Shortcut for `append(...unwrap(...elements))`. @deprecated Use `add()`. */
   children = this.add
 
   /** Shortcut for `append(...unwrap(...elements))`. */
