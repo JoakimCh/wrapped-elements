@@ -131,6 +131,9 @@ export class WrappedHtmlElement extends Function {
   #propertyProxy(parent) {
     return new Proxy(() => {}, {
       get: (target, property) => {
+        if (property == 'name') {
+          property = 'aliasForName'
+        }
         if (property in parent) {
           return this.#getProperty(parent, property)
         }
@@ -191,8 +194,8 @@ export class WrappedHtmlElement extends Function {
     return this.#setOrGetProperty('className', ...arguments)
   }
 
-  /** Shortcut for the `name` attribute. */
-  name(value) {
+  /* Shortcut for the `name` attribute. Function.name is read only; so we handle this in the proxy. */
+  aliasForName(value) {
     return this.#setOrGetAttribute('name', ...arguments)
   }
 
