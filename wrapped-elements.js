@@ -80,10 +80,13 @@ export class WrappedHtmlElement extends Function {
   }
 
   #applyProxy(target, thisArg, args) {
-    return this.children(...args)
+    return this.add(...args)
   }
 
   #getProxy(target, property, r) {
+    if (property == 'name') {
+      property = 'aliasForName'
+    }
     if (property in this) {
       if (typeof this[property] == 'function') {
         return this[property].bind(this)
@@ -131,9 +134,6 @@ export class WrappedHtmlElement extends Function {
   #propertyProxy(parent) {
     return new Proxy(() => {}, {
       get: (target, property) => {
-        if (property == 'name') {
-          property = 'aliasForName'
-        }
         if (property in parent) {
           return this.#getProperty(parent, property)
         }
