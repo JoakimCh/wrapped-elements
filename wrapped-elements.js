@@ -146,7 +146,10 @@ export class WrappedHtmlElement extends Function {
         if (typeof parent == 'function') {
           parent(...args)
         } else {
-          if (args.length > 1 || typeof args[0] != 'object') {
+          if (!args.length) {
+            return parent
+          }
+          if (typeof args[0] != 'object') {
             throw Error(`You must supply an object with the values to set.`)
           }
           for (const key in args[0]) {
@@ -211,6 +214,14 @@ export class WrappedHtmlElement extends Function {
   /** Shortcut for `append(...unwrap(...elements))`. */
   add(...elements) {
     this.#element.append(...unwrap(...elements))
+    return this.#proxy
+  }
+
+  shadowAdd(...elements) {
+    if (!this.#element.shadowRoot) {
+      throw Error(`No open shadowRoot is attached to the element.`)
+    }
+    this.#element.shadowRoot.append(...unwrap(...elements))
     return this.#proxy
   }
 
