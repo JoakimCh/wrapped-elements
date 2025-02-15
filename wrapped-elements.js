@@ -217,24 +217,36 @@ export class WrappedHtmlElement extends Function {
     return this.#proxy
   }
 
-  shadowAdd(...elements) {
+  #checkShadow() {
     if (!this.#element.shadowRoot) {
       throw Error(`No open shadowRoot is attached to the element.`)
     }
+  }
+
+  /** Add elements to the `shadowRoot`. */
+  shadowAdd(...elements) {
+    this.#checkShadow()
     this.#element.shadowRoot.append(...unwrap(...elements))
     return this.#proxy
   }
 
+  /** Adopt all from `document.adoptedStyleSheets`. */
+  shadowAdoptStyles(...including) {
+    this.#checkShadow()
+    this.#element.shadowRoot.adoptedStyleSheets = [...document.adoptedStyleSheets, ...including]
+    return this.#proxy
+  }
+
   /** Store the `HTMLElement` under `tags[title]`. */
-  tag(title) {
-    tags[title] = this.#element
+  tag(title, group = tags) {
+    group[title] = this.#element
     return this.#proxy
   }
 
   /** Store the `HTMLElement` under `tags[title]` and assign an id with the sane title. */
-  tagAndId(title) {
+  tagAndId(title, group = tags) {
     this.#element.id = title
-    tags[title] = this.#element
+    group[title] = this.#element
     return this.#proxy
   }
   

@@ -10,7 +10,7 @@
  * @param {string} [options.description]
  * @param {boolean} [options.allowDarkTheme] Whether to add the style `:root {color-scheme: light dark}` which enables the browser to use its default dark style when the user is using a dark theme. It defaults to `true`.
  */
-export function pageSetup({
+export async function pageSetup({
   lang,
   title,
   favicon,
@@ -38,7 +38,7 @@ export function pageSetup({
       stylesheets = [stylesheets]
     }
     for (const url of stylesheets) {
-      css.fromFile(url)
+      await css.fromFile(url)
     }
   }
   if (lang) {
@@ -56,13 +56,15 @@ export function pageSetup({
 }
 
 export const css = {
-  async fromFile(url) {
-    return this.fromString(await (await fetch(url)).text())
+  async fromFile(url, addToDocument = true) {
+    return this.fromString(await (await fetch(url)).text(), addToDocument)
   },
-  fromString(string) {
+  fromString(string, addToDocument = true) {
     const styleSheet = new CSSStyleSheet()
     styleSheet.replaceSync(string)
-    document.adoptedStyleSheets = [...document.adoptedStyleSheets, styleSheet]
+    if (addToDocument) {
+      document.adoptedStyleSheets = [...document.adoptedStyleSheets, styleSheet]
+    }
     return styleSheet
   }
 }
