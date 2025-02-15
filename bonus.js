@@ -56,19 +56,15 @@ export function pageSetup({
 }
 
 export const css = {
-  fromFile(url) {
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = url
-    document.head.append(link)
-    return link
+  async fromFile(url) {
+    return this.fromString(await (await fetch(url)).text())
   },
   fromString(string) {
-    const style = document.createElement('style')
-    style.textContent = string
-    document.head.append(style)
-    return style
-  } 
+    const styleSheet = new CSSStyleSheet()
+    styleSheet.replaceSync(string)
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, styleSheet]
+    return styleSheet
+  }
 }
 
 /**
