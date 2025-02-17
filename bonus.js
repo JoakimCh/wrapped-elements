@@ -63,7 +63,7 @@ export const css = {
     const styleSheet = new CSSStyleSheet()
     styleSheet.replaceSync(string)
     if (addToDocument) {
-      document.adoptedStyleSheets = [...document.adoptedStyleSheets, styleSheet]
+      document.adoptedStyleSheets.push(styleSheet)
     }
     return styleSheet
   }

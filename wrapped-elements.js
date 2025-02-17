@@ -230,10 +230,11 @@ export class WrappedHtmlElement extends Function {
     return this.#proxy
   }
 
-  /** Adopt all from `document.adoptedStyleSheets`. */
-  shadowAdoptStyles(...including) {
+  /** By default adopts all from `document.adoptedStyleSheets`. */
+  shadowAdoptStyles(styles = [...document.adoptedStyleSheets]) {
     this.#checkShadow()
-    this.#element.shadowRoot.adoptedStyleSheets = [...document.adoptedStyleSheets, ...including]
+    this.#element.shadowRoot.adoptedStyleSheets 
+      = Array.isArray(styles) ? styles : [styles]
     return this.#proxy
   }
 
