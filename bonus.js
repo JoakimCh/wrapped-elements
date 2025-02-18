@@ -95,5 +95,59 @@ export function setFavicon(href) {
   link.href = href || 'data:,'
 }
 
-export const log = console.log
-export const debug = console.debug
+export let log = console.log
+export let debug = console.debug
+
+/** Globally set the `log` function of this module. */
+export function setLog(logFunction) {
+  log = logFunction
+}
+/** Globally set the `debug` function of this module. */
+export function setDebug(debugFunction) {
+  debug = debugFunction
+}
+
+const parallelActionWeakMap = new WeakMap()
+/** Allows doing the same action on multiple objects. */
+export function parallel(target) {
+  // automatically convert common lists of HTMLElements
+  if (target instanceof NodeList || target instanceof HTMLCollection) {
+    target = Array.from(target)
+  }
+  if (Array.isArray(target)) {
+    let proxy = parallelActionWeakMap.get(target)
+    if (proxy) return proxy
+    proxy = new Proxy(target, {
+      get(targets, prop) {
+        // if (prop == 'then') return undefined
+        const value = targets[0]?.[prop]
+        if (typeof value == 'function') {
+          return (...args) => {
+            const result = []
+            for (const target of targets) {
+              result.push(target[prop](...args))
+            }
+            return result
+          }
+        }
+        // proxy further into nested objects
+        const arrayOfValues = targets.map(target => target[prop])
+        if (typeof value == 'object' && value != null
+        // but skip Arrays, NodeLists and HTMLCollections
+        && !(Array.isArray(value) || value instanceof NodeList || value instanceof HTMLCollection)) {
+          return parallel(arrayOfValues)
+        }
+        return arrayOfValues
+      },
+      set(targets, prop, value) {
+        for (const target of targets) {
+          target[prop] = value
+        }
+        return true // indicate success
+      },
+    })
+    parallelActionWeakMap.set(target, proxy)
+    return proxy
+  }
+  return target
+}
