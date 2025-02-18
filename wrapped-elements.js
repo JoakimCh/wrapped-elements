@@ -105,6 +105,7 @@ export class WrappedHtmlElement extends Function {
     } else {
       throw Error(`No such property: ${property}`)
     }
+    return true
   }
 
   #getProperty(parent, property) {
@@ -140,6 +141,7 @@ export class WrappedHtmlElement extends Function {
       },
       set: (target, property, value) => {
         parent[property] = value
+        return true
       },
       apply: (target, thisArg, args) => {
         // it's either an object or a function
