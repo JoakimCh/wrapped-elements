@@ -32,7 +32,8 @@ export function wrap(element) {
 }
 
 /** Find any tagged `HTMLElements` here.
- * @type {Object.<string, HTMLElement>} */
+ * @type {Object.<string, HTMLElement>} 
+ * @deprecated Not needed when using tag = e.whatever() */
 export let tags = {}
 
 /** @type {WeakMap.<HTMLElement, WrappedHtmlElement>} */
@@ -240,13 +241,15 @@ export class WrappedHtmlElement extends Function {
     return this.#proxy
   }
 
-  /** Store the `HTMLElement` under `tags[title]`. */
+  /** Store the `HTMLElement` under `tags[title]`. 
+   * @deprecated Not needed when using tag = e.whatever() */
   tag(title, group = tags) {
     group[title] = this.#element
     return this.#proxy
   }
 
-  /** Store the `HTMLElement` under `tags[title]` and assign an id with the sane title. */
+  /** Store the `HTMLElement` under `tags[title]` and assign an id with the sane title. 
+   * @deprecated Not needed when using tag = e.whatever() */
   tagAndId(title, group = tags) {
     this.#element.id = title
     group[title] = this.#element
@@ -312,7 +315,8 @@ export const e = new Proxy({}, {
 })
 
 /** If given strings then consume the specified tags out of the `tags` object (returns and removes them). If no arguments then consume all the tags.
- * @param {string | object | undefined} tags */
+ * @param {string | object | undefined} tags 
+ * @deprecated Not needed when using tag = e.whatever() */
 export function consumeTags(...tagTitle) {
   // consume all
   if (!tagTitle.length) {
