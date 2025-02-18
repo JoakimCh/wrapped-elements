@@ -278,7 +278,7 @@ export class WrappedHtmlElement extends Function {
   }
 
   /** Shortcut for `removeAttribute`. */
-  remove(attribute) {
+  delete(attribute) {
     this.#element.removeAttribute(attribute)
     return this.#proxy
   }
