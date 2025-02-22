@@ -151,3 +151,16 @@ export function parallel(target) {
   }
   return target
 }
+
+export function hide(...elements) {
+  parallel(elements).hidden = true
+}
+export function show(...elements) {
+  parallel(elements).hidden = false
+}
+export function disable(...elements) {
+  parallel(elements).setAttribute('disabled','')
+}
+export function enable(...elements) {
+  parallel(elements).removeAttribute('disabled')
+}
