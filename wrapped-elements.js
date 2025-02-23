@@ -80,8 +80,10 @@ export class WrappedHtmlElement extends Function {
     return this.#proxy
   }
 
+  // for convenience I return the underlying element, use .add() if proxy is wanted for further chaining
   #applyProxy(target, thisArg, args) {
-    return this.add(...args)
+    this.add(...args)
+    return this.element
   }
 
   #getProxy(target, property, r) {
