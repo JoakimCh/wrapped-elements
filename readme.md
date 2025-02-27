@@ -54,6 +54,13 @@ const {start, stop, ufo} = tags
 log('All is good! 😎')
 ```
 
+# Quirks
+
+## Difference between () and add()
+`e.div()` allows adding children just like `e.div.add()`, but it returns the wrapped element (the contained `HTMLElement`), unlike `add()` which returns the wrapper for further chaining.
+
+This is done so we can easily return the `HTMLElement` instead of having to follow it with `.element`.
+
 # End of the world
 
 No, maybe just this readme.

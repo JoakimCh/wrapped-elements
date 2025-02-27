@@ -56,10 +56,23 @@ export async function pageSetup({
 }
 
 export const css = {
-  async fromFile(url, addToDocument = true) {
+  async fromFile(url, {addToDocument = true, asLink = false} = {}) {
+    if (asLink) {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = url
+      if (addToDocument) document.head.append(link)
+      return link
+    }
     return this.fromString(await (await fetch(url)).text(), addToDocument)
   },
-  fromString(string, addToDocument = true) {
+  fromString(string, {addToDocument = true, asStyle = false} = {}) {
+    if (asStyle) {
+      const style = document.createElement('style')
+      style.textContent = string
+      if (addToDocument) document.head.append(style)
+      return style
+    }
     const styleSheet = new CSSStyleSheet()
     styleSheet.replaceSync(string)
     if (addToDocument) {
