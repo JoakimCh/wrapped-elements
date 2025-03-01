@@ -17,7 +17,8 @@ export async function pageSetup({
   viewport,
   stylesheets,
   description,
-  allowDarkTheme = true
+  allowDarkTheme = true,
+  stylesheetsAsLinks = false
 }) {
   if (title) {
     document.title = title
@@ -38,7 +39,7 @@ export async function pageSetup({
       stylesheets = [stylesheets]
     }
     for (const url of stylesheets) {
-      await css.fromFile(url)
+      await css.fromFile(url, {asLink: stylesheetsAsLinks})
     }
   }
   if (lang) {
