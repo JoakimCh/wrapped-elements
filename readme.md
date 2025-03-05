@@ -30,7 +30,7 @@ npm i wrapped-elements
 # Example
 
 ```js
-import {log, pageSetup, e, tags, wrap, unwrap} from './wrapped-elements.js'
+import {log, pageSetup, e} from './wrapped-elements.js'
 
 pageSetup({
   title: 'UFO Experiment',
@@ -38,21 +38,26 @@ pageSetup({
   stylesheets: 'style.css'
 })
 
-document.body.append(...unwrap(
+let start, stop, ufo
+
+document.body.append(
   e.h1('UFO Experiment'),
   e.p('Use your mind to make it hover. ', e.small(
     'One of my different ',
-    e.a('TRNG based experiments').href('../'), '.'
+    e.a.href('../')('TRNG based experiments'), '.'
   )),
-  e.button('Start experiment').tag('start'),
-  e.button('Stop experiment').tag('stop').hidden(true),
-  e.img.tagAndId('ufo').src('ufo.png').style({bottom: '0px'})
-))
-
-const {start, stop, ufo} = tags
+  start = e.button('Start experiment'),
+  stop = e.button.hidden(true)('Stop experiment'),
+  ufo = e.img.id('ufo').src('ufo.png').style({bottom: '0px'})()
+)
 
 log('All is good! 😎')
 ```
+
+# "In production":
+
+https://the-guess-experiment.com (a great example of how to use it)
+https://joakimch.github.io/TRNG-Mind-Over-Matter-Experiments (in the experiments)
 
 # Quirks
 
