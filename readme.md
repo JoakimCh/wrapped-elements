@@ -61,6 +61,10 @@ https://joakimch.github.io/TRNG-Mind-Over-Matter-Experiments (in the experiments
 
 # Quirks
 
+## e.text
+
+`e.text` returns a function to create a text node, hence `e.text('whatever')` creates and returns such a node.
+
 ## Difference between () and add()
 `e.div()` allows adding children just like `e.div.add()`, but it returns the wrapped element (the contained `HTMLElement`), unlike `add()` which returns the wrapper for further chaining.
 
