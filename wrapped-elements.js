@@ -313,7 +313,7 @@ export class WrappedHtmlElement extends Function {
 export const e = new Proxy({}, {
   get: function(target, property) {
     if (property == 'text') {
-      return text => document.createTextNode(text)
+      return text => document.createTextNode(text || '')
     }
     return new WrappedHtmlElement(property)
   }
